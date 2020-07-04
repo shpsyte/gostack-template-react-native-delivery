@@ -73,35 +73,81 @@ const FoodDetails: React.FC = () => {
 
   useEffect(() => {
     async function loadFood(): Promise<void> {
-      // Load a specific food with extras based on routeParams id
+      const { id } = routeParams;
+
+      const foodResponse = await api.get(`foods/${id}`);
+      setFood(foodResponse.data);
+
+      setExtras(
+        foodResponse.data.extras.map(extra => {
+          return {
+            ...extra,
+            quantity: 0,
+          };
+        }),
+      );
     }
 
     loadFood();
   }, [routeParams]);
 
   function handleIncrementExtra(id: number): void {
-    // Increment extra quantity
+    const extra = extras.find(extraPar => extraPar.id === id);
+    const removeSelectedExtra = extras.filter(
+      extraDelete => extraDelete.id !== id,
+    );
+
+    if (extra) {
+      extra.quantity += 1;
+      setExtras([...removeSelectedExtra, extra]);
+    }
   }
 
   function handleDecrementExtra(id: number): void {
-    // Decrement extra quantity
+    const extra = extras.find(ExtraPar => ExtraPar.id === id);
+    const removeSelectedExtra = extras.filter(
+      extraDelete => extraDelete.id !== id,
+    );
+
+    if (extra) {
+      const { quantity } = extra;
+
+      if (quantity > 0) {
+        extra.quantity = quantity - 1;
+      } else {
+        extra.quantity = quantity;
+      }
+
+      setExtras([...removeSelectedExtra, extra]);
+    }
   }
 
   function handleIncrementFood(): void {
-    // Increment food quantity
+    setFoodQuantity(state => state + 1);
   }
 
   function handleDecrementFood(): void {
-    // Decrement food quantity
+    let qt = foodQuantity - 1;
+    if (qt < 1) {
+      qt = 1;
+    }
+    setFoodQuantity(qt);
   }
 
   const toggleFavorite = useCallback(() => {
-    // Toggle if food is favorite or not
-  }, [isFavorite, food]);
+    setIsFavorite(!isFavorite);
+  }, [isFavorite]);
 
   const cartTotal = useMemo(() => {
     // Calculate cartTotal
-  }, [extras, food, foodQuantity]);
+    let total = 0;
+    const totalExtras = extras.reduce((acc: number, extra: Extra) => {
+      total += extra.quantity * extra.value;
+      return total;
+    }, 0);
+
+    return formatValue(totalExtras + food.price * foodQuantity);
+  }, [extras, food.price, foodQuantity]);
 
   async function handleFinishOrder(): Promise<void> {
     // Finish the order and save on the API
